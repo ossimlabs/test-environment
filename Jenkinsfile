@@ -109,8 +109,8 @@ podTemplate(
                     {
                         sh """
                         git clone https://github.com/ossimlabs/omar-oldmar.git
-                        cp omar-sqs-stager/cypress.json .
-                        cp -r omar-sqs-stager/cypress .
+                        cp omar-oldmar/cypress.json .
+                        cp -r omar-oldmar/cypress .
                         """
                         try {
                         sh """
@@ -120,12 +120,12 @@ podTemplate(
                         catch (err) {}
                         sh """
                             npm i -g xunit-viewer
-                            xunit-viewer -r results -o results/omar-sqs-stager-test-results.html
+                            xunit-viewer -r results -o results/omar-oldmar-test-results.html
                         """
                             junit 'results/*.xml'
                             archiveArtifacts "results/*.xml"
                             archiveArtifacts "results/*.html"
-                            s3Upload(file:'results/omar-sqs-stager-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
+                            s3Upload(file:'results/omar-oldmar-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
                     }
                 }
             }
