@@ -73,7 +73,7 @@ podTemplate(
             // git url: 'https://github.com/ossimlabs/omar-wfs.git'
             container('cypress')
             {
-                if (TESTS_TO_RUN == 'ALL' || TESTS_TO_RUN == 'omar-wfs')
+                if (TESTS_TO_RUN == 'ALL' || TESTS_TO_RUN == 'sqs-stager')
                 {
                     stage('Run sqs-stager test')
                     {
@@ -103,7 +103,7 @@ podTemplate(
                         """
                     }
                 }
-                if (TESTS_TO_RUN == 'ALL' || TESTS_TO_RUN == 'sqs-stager')
+                if (TESTS_TO_RUN == 'ALL' || TESTS_TO_RUN == 'oldmar')
                 {
                     stage('Run oldmar test')
                     {
