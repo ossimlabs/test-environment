@@ -2,7 +2,8 @@ properties([
     parameters([
         string(name: 'PROJECT_URL', defaultValue: 'https://github.com/ossimlabs/Test-Environment', description: 'The project github URL'),
         string(name: 'DOCKER_REGISTRY_DOWNLOAD_URL', defaultValue: 'nexus-docker-private-group.ossim.io', description: 'Repository of docker images'),
-        string(name: 'TESTS_TO_RUN', defaultValue: 'ALL', description: 'Used to specify which tests to run, default is all, runs all tests')
+        string(name: 'TESTS_TO_RUN', defaultValue: 'ALL', description: 'Used to specify which tests to run, default is all, runs all tests'),
+        string(name: 'TEST_ENV', defaultValue: 'omar-test.ossim', description: 'Change this value to change the testing environment, i.e. change to omar-dev to test dev')
     ]),
     pipelineTriggers([
         [$class: "GitHubPushTrigger"]
@@ -81,6 +82,13 @@ podTemplate(
                         git clone https://github.com/ossimlabs/omar-sqs-stager.git
                         cp omar-sqs-stager/cypress.json .
                         cp -r omar-sqs-stager/cypress .
+
+
+                        sed 's+omar.ossim+${TEST_ENV}+g' cypress.json
+                        sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json
+                        sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json
+
+
                         ls
                         """
                         try {
