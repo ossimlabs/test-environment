@@ -59,126 +59,73 @@ podTemplate(
             }
 
         }
+
         stage("Begin Tests")
         {
             def fileContents = readFile "testList.txt"
-
+            def loop = 0
+            def go = 0
             String[] str
             str = fileContents.split('\n')
 
-            for( String test : str )
+
+
+            if (TESTS_TO_RUN == 'ALL')
             {
-            println(test)
+                loop = str.size()
             }
-            container('cypress')
+            else
             {
-                if (TESTS_TO_RUN == 'ALL' || TESTS_TO_RUN == 'sqs-stager')
+                loop = 1
+                str = [TESTS_TO_RUN]
+            }
+            while(go < loop)
+            {
+                for( String currTest : str )
                 {
-                    stage('Run sqs-stager test')
+                    print currTest
+                    container('cypress')
                     {
-                        sh """
-                        git clone https://github.com/ossimlabs/omar-sqs-stager.git
-                        cp omar-sqs-stager/cypress.json .
-                        cp -r omar-sqs-stager/cypress .
+                        stage(currTest + " test")
+                        {
+                            sh """
+                            git clone https://github.com/ossimlabs/omar-"$currTest".git
+                            cp omar-"$currTest"/cypress.json .
+                            cp -r omar-"$currTest"/cypress .
+
+                            ls
 
 
-                        sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                        sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                        sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                            sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                            sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                            sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
 
 
-                        """
-                        try {
-                        sh """
-                            cypress run --headless
-                        """
+                            """
+                            try {
+                            sh """
+                                cypress run --headless
+                            """
+                            }
+                            catch (err) {}
+                            sh """
+                                npm i -g xunit-viewer
+                                xunit-viewer -r results -o results/omar-"$currTest"-test-results.html
+                            """
+                                junit 'results/*.xml'
+                                archiveArtifacts "results/*.xml"
+                                archiveArtifacts "results/*.html"
+                                s3Upload(file:'results/omar-' + "${currTest}" + '-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
+                            sh """
+                            rm cypress.json
+                            rm -r cypress
+                            """
                         }
-                        catch (err) {}
-                        sh """
-                            npm i -g xunit-viewer
-                            xunit-viewer -r results -o results/omar-sqs-stager-test-results.html
-                        """
-                            junit 'results/*.xml'
-                            archiveArtifacts "results/*.xml"
-                            archiveArtifacts "results/*.html"
-                            s3Upload(file:'results/omar-sqs-stager-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
-                        sh """
-                        rm cypress.json
-                        rm -r cypress
-                        """
+
                     }
-                }
-                if (TESTS_TO_RUN == 'ALL' || TESTS_TO_RUN == 'oldmar')
-                {
-                    stage('Run oldmar test')
-                    {
-                        sh """
-                        git clone https://github.com/ossimlabs/omar-oldmar.git
-                        cp omar-oldmar/cypress.json .
-                        cp -r omar-oldmar/cypress .
-
-
-
-                        sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                        sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                        sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-
-
-                        """
-                        try {
-                        sh """
-                            cypress run --headless
-                        """
-                        }
-                        catch (err) {}
-                        sh """
-                            npm i -g xunit-viewer
-                            xunit-viewer -r results -o results/omar-oldmar-test-results.html
-                        """
-                            junit 'results/*.xml'
-                            archiveArtifacts "results/*.xml"
-                            archiveArtifacts "results/*.html"
-                            s3Upload(file:'results/omar-oldmar-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
-                    }
-                }
-                if (TESTS_TO_RUN == 'ALL' || TESTS_TO_RUN == 'wmts')
-                {
-                    stage('Run wmts test')
-                    {
-                        sh """
-                        git clone https://github.com/ossimlabs/omar-wmts.git
-                        cp omar-wmts/cypress.json .
-                        cp -r omar-wmts/cypress .
-
-
-                        sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                        sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                        sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-
-
-                        """
-                        try {
-                        sh """
-                            cypress run --headless
-                        """
-                        }
-                        catch (err) {}
-                        sh """
-                            npm i -g xunit-viewer
-                            xunit-viewer -r results -o results/omar-wmts-test-results.html
-                        """
-                            junit 'results/*.xml'
-                            archiveArtifacts "results/*.xml"
-                            archiveArtifacts "results/*.html"
-                            s3Upload(file:'results/omar-wmts-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
-                        sh """
-                        rm cypress.json
-                        rm -r cypress
-                        """
-                    }
+                go++
                 }
             }
         }
-
     }
 }
