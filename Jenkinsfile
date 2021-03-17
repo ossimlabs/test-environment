@@ -1,14 +1,11 @@
-properties
-([
-    parameters
-    ([
+properties([
+    parameters([
         string(name: 'PROJECT_URL', defaultValue: 'https://github.com/ossimlabs/test-environment', description: 'The project github URL'),
         string(name: 'DOCKER_REGISTRY_DOWNLOAD_URL', defaultValue: 'nexus-docker-private-group.ossim.io', description: 'Repository of docker images'),
         string(name: 'TESTS_TO_RUN', defaultValue: 'ALL', description: 'Used to specify which tests to run, default is all, runs all tests'),
         string(name: 'TEST_ENV', defaultValue: 'omar-test.ossim', description: 'Change this value to change the testing environment, i.e. change to omar-dev to test dev')
     ]),
-    pipelineTriggers
-    ([
+    pipelineTriggers([
         [$class: "GitHubPushTrigger"]
     ]),
     [$class: 'GithubProjectProperty', displayName: '', projectUrlStr: '${PROJECT_URL}'],
@@ -16,12 +13,9 @@ properties
     disableConcurrentBuilds()
 ])
 
-podTemplate
-(
-    containers:
-    [
-        containerTemplate
-        (
+podTemplate(
+    containers: [
+        containerTemplate(
             name: 'cypress',
             image: "${DOCKER_REGISTRY_DOWNLOAD_URL}/cypress/included:4.9.0",
             ttyEnabled: true,
@@ -29,10 +23,8 @@ podTemplate
             privileged: true
         )
     ],
-    volumes:
-    [
-        hostPathVolume
-        (
+    volumes: [
+        hostPathVolume(
             hostPath: '/var/run/docker.sock',
             mountPath: '/var/run/docker.sock'
         ),
@@ -117,6 +109,7 @@ podTemplate
                                 rm -r cypress
                             """
                         }
+
                     }
                     go++
                 }
