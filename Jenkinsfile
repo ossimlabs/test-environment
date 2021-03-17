@@ -39,7 +39,7 @@ podTemplate(
             APP_NAME = PROJECT_URL.tokenize('/').last()
             scmVars = checkout(scm)
             Date date = new Date()
-            String currentDate = date.format("YYYY-MM-dd-HH-mm-ss")
+            String currentDate = date.format("MM/dd-HH:mm")
             MASTER = "master"
             GIT_BRANCH_NAME = scmVars.GIT_BRANCH
             BRANCH_NAME = """${sh(returnStdout: true, script: "echo ${GIT_BRANCH_NAME} | awk -F'/' '{print \$2}'").trim()}"""
@@ -49,8 +49,8 @@ podTemplate(
 
             if (BRANCH_NAME == "${MASTER}")
             {
-                buildName "${VERSION}"
-                TAG_NAME = "${VERSION}"
+                buildName "${TESTS_TO_RUN}-${currentDate}"
+                TAG_NAME = "${TESTS_TO_RUN}-${currentDate}"
             }
             else
             {
