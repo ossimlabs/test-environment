@@ -19,7 +19,7 @@ podTemplate(
     containers: [
         containerTemplate(
             name: 'cypress',
-            image: "${DOCKER_REGISTRY_DOWNLOAD_URL}/cypress/included:4.9.0",
+            image: "${DOCKER_REGISTRY_DOWNLOAD_URL}/cypress/included:4.9.2",
             ttyEnabled: true,
             command: 'cat',
             privileged: true
