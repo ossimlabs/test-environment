@@ -3,7 +3,9 @@ properties([
         string(name: 'PROJECT_URL', defaultValue: 'https://github.com/ossimlabs/test-environment', description: 'The project github URL'),
         string(name: 'DOCKER_REGISTRY_DOWNLOAD_URL', defaultValue: 'nexus-docker-private-group.ossim.io', description: 'Repository of docker images'),
         string(name: 'TESTS_TO_RUN', defaultValue: 'ALL', description: 'Used to specify which tests to run, default is all, runs all tests'),
-        string(name: 'TEST_ENV', defaultValue: 'omar-test.ossim', description: 'Change this value to change the testing environment, i.e. change to omar-dev to test dev')
+        string(name: 'TEST_ENV', defaultValue: 'omar-test.ossim', description: 'Change this value to change the testing environment, i.e. change to omar-dev to test dev'),
+        booleanParam(name: 'FRONT_END', defaultValue: true, description: 'Should the frontEnd tests run?'),
+        booleanParam(name: 'BACK_END', defaultValue: true, description: 'Should the backEnd tests run?')
     ]),
     pipelineTriggers([
         [$class: "GitHubPushTrigger"]
@@ -50,69 +52,80 @@ podTemplate(
             buildName "${TESTS_TO_RUN}-${currentDate}"
             TAG_NAME = "${TESTS_TO_RUN}-${currentDate}"
         }
-
-        stage("Begin Tests")
+        if (BACK_END)
         {
-            def fileContents = readFile "testList.txt"
-            def loop = 0
-            def go = 0
-            String[] str
-            str = fileContents.split('\n')
+            stage("Begin BackEnd Tests")
+            {
+                def fileContents = readFile "testList.txt"
+                def loop = 0
+                def go = 0
+                String[] str
+                str = fileContents.split('\n')
 
-            if (TESTS_TO_RUN == 'ALL')
-            {
-                loop = str.size()
-            }
-            else
-            {
-                loop = 1
-                str = [TESTS_TO_RUN]
-            }
-            while(go < loop)
-            {
-                for( String currTest : str )
+                if (TESTS_TO_RUN == 'ALL')
                 {
-                    print currTest
-                    container('cypress')
+                    loop = str.size()
+                }
+                else
+                {
+                    loop = 1
+                    str = [TESTS_TO_RUN]
+                }
+                while(go < loop)
+                {
+                    for( String currTest : str )
                     {
-                        stage(currTest + " test")
+                        print currTest
+                        container('cypress')
                         {
-                            sh """
-                            git clone https://github.com/ossimlabs/omar-"$currTest".git
-                            cp omar-"$currTest"/cypress.json .
-                            cp -r omar-"$currTest"/cypress .
-
-                            sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                            sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                            sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
-                            """
-
-                            try
+                            stage(currTest + " test")
                             {
                                 sh """
-                                    cypress run --headless
+                                git clone https://github.com/ossimlabs/omar-"$currTest".git
+                                cp omar-"$currTest"/cypress.json .
+                                cp -r omar-"$currTest"/cypress .
+
+                                sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                                sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                                sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                                """
+
+                                try
+                                {
+                                    sh """
+                                        cypress run --headless
+                                    """
+                                }
+                                catch (err) {}
+
+
+                                sh """
+                                    npm i -g xunit-viewer
+                                    xunit-viewer -r results -o results/omar-"$currTest"-test-results.html
+                                """
+                                    junit 'results/*.xml'
+                                    archiveArtifacts "results/*.xml"
+                                    archiveArtifacts "results/*.html"
+                                    s3Upload(file:'results/omar-' + "${currTest}" + '-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
+                                sh """
+                                    rm cypress.json
+                                    rm -r cypress
                                 """
                             }
-                            catch (err) {}
 
-
-                            sh """
-                                npm i -g xunit-viewer
-                                xunit-viewer -r results -o results/omar-"$currTest"-test-results.html
-                            """
-                                junit 'results/*.xml'
-                                archiveArtifacts "results/*.xml"
-                                archiveArtifacts "results/*.html"
-                                s3Upload(file:'results/omar-' + "${currTest}" + '-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
-                            sh """
-                                rm cypress.json
-                                rm -r cypress
-                            """
                         }
-
+                        go++
                     }
-                    go++
                 }
+            }
+        }
+        if (FRONT_END)
+        {
+            stage("Begin FrontEnd Tests")
+            {
+                sh """
+                echo "it is working!!"
+                """
             }
         }
     }
