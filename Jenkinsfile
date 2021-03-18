@@ -52,7 +52,7 @@ podTemplate(
             buildName "${TESTS_TO_RUN}-${currentDate}"
             TAG_NAME = "${TESTS_TO_RUN}-${currentDate}"
         }
-        if (BACK_END)
+        if (params.BACK_END)
         {
             stage("Begin BackEnd Tests")
             {
@@ -119,7 +119,7 @@ podTemplate(
                 }
             }
         }
-        if (FRONT_END)
+        if (params.FRONT_END)
         {
             stage("Begin FrontEnd Tests")
             {
