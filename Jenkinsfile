@@ -123,9 +123,116 @@ podTemplate(
         {
             stage("Begin FrontEnd Tests")
             {
-                sh """
-                echo "it is working!!"
-                """
+                stage("UI test")
+                {
+                    container('cypress')
+                    {
+                        sh """
+                        git clone --branch jdk11 https://github.com/ossimlabs/omar-ui.git
+                        cp omar-ui/cypress.json .
+                        cp -r omar-ui/cypress .
+
+                        sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                        sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                        sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                        """
+
+                        try
+                        {
+                            sh """
+                                cypress run --headless
+                            """
+                        }
+                        catch (err) {}
+                        sh """
+                            npm i -g xunit-viewer
+                            xunit-viewer -r results -o results/omar-ui-test-results.html
+                        """
+                        junit 'results/*.xml'
+                        archiveArtifacts "results/*.xml"
+                        archiveArtifacts "results/*.html"
+                        s3Upload(file:'results/omar-ui-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
+
+                        sh """
+                        rm cypress.json
+                        rm -r cypress
+                        """
+                    }
+                }
+                stage("TLV test")
+                {
+                    container('cypress')
+                    {
+                        sh """
+                            git clone https://github.com/ossimlabs/tlv.git
+                            cp tlv/cypress.json .
+                            cp -r tlv/cypress .
+                            cp tlv/testParameters.json .
+
+                            sed 's+omar.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                            sed 's+omar-dev.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+                            sed 's+omar-test.ossim+${TEST_ENV}+g' cypress.json > cypress2.json && cat cypress2.json > cypress.json && rm cypress2.json
+
+
+                        """
+
+
+                        try
+                        {
+                            sh """
+                                cypress run --headless
+                            """
+                        }
+                        catch (err) {}
+
+                        sh """
+                            npm i -g xunit-viewer
+                            xunit-viewer -r results -o results/tlv-test-results.html
+                            """
+                            junit 'results/*.xml'
+                            archiveArtifacts "results/*.xml"
+                            archiveArtifacts "results/*.html"
+                            s3Upload(file:'results/tlv-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
+
+                        sh """
+                            cd cypress/jsonFiles
+                            chmod +x fixCypressOutput.sh
+                            ./fixCypressOutput.sh
+
+                            cd ../testing/testing/spiders
+                            scrapy crawl tests -o output.json
+                            chmod +x fixScrapyOutput.sh
+                            ./fixScrapyOutput.sh
+
+                            cd ../../..
+
+                            python3 comparison.py
+
+                            cd ..
+                        """
+                        try
+                        {
+                          sh """
+                              cypress run --headless --spec "cypress/integration/Final.js"
+                          """
+                        }
+                        catch (err) {}
+                        sh """
+                           npm i -g xunit-viewer
+                           xunit-viewer -r results -o results/tlv-test-results.html
+                        """
+                        junit 'results/*.xml'
+                        archiveArtifacts "results/*.xml"
+                        archiveArtifacts "results/*.html"
+                        s3Upload(file:'results/tlv-test-results.html', bucket:'ossimlabs', path:'cypressTests/')
+
+                        sh """
+                        rm cypress.json
+                        rm -r cypress
+                        rm testParameters.json
+                        """
+                    }
+                }
             }
         }
     }
