@@ -35,3 +35,13 @@ customize the tests that are being run.
 - RUN_TLV
     - allows tlv test to run
     - default is true
+    
+### testList.txt
+File used to list the back end tests that will be tested. In order to add more
+back end tests to the test-environment, you simply need to add the name of the 
+service to this list.
+
+Currently, test environment is set up to run tests for repositories that have 
+the naming convention "omar-{service}". testList.txt only contains the {service}
+portion of this convention, and therefore when adding to the list, only need 
+that portion of the service name. 
