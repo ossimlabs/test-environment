@@ -1,3 +1,2 @@
-wmts
 oldmar
 sqs-stager
