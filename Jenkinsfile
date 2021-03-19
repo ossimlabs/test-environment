@@ -63,12 +63,8 @@ podTemplate(
             }
             else if (params.FRONT_END && !params.BACK_END)
             {
-                if (TESTS_TO_RUN == 'ALL')
-                {
-                    buildName "All_FrontEnd" + "-${currentDate}"
-                    TAG_NAME = "All_FrontEnd" + "-${currentDate}"
-                }
-                else if (!params.RUN_UI && params.RUN_TLV)
+
+                if (!params.RUN_UI && params.RUN_TLV)
                 {
                     buildName "TLV" + "-${currentDate}"
                     TAG_NAME = "TLV" + "-${currentDate}"
@@ -77,6 +73,11 @@ podTemplate(
                 {
                     buildName "UI" + "-${currentDate}"
                     TAG_NAME = "UI" + "-${currentDate}"
+                }
+                else
+                {
+                    buildName "All_FrontEnd" + "-${currentDate}"
+                    TAG_NAME = "All_FrontEnd" + "-${currentDate}"
                 }
             }
         }
