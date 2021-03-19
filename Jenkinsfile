@@ -4,8 +4,8 @@ properties([
         string(name: 'DOCKER_REGISTRY_DOWNLOAD_URL', defaultValue: 'nexus-docker-private-group.ossim.io', description: 'Repository of docker images'),
         string(name: 'TESTS_TO_RUN', defaultValue: 'ALL', description: 'Used to specify which tests to run, default is all, runs all tests'),
         string(name: 'TEST_ENV', defaultValue: 'omar-test.ossim', description: 'Change this value to change the testing environment, i.e. change to omar-dev to test dev'),
-        booleanParam(name: 'FRONT_END', defaultValue: true, description: 'Should the frontEnd tests run?'),
-        booleanParam(name: 'BACK_END', defaultValue: true, description: 'Should the backEnd tests run?'),
+        booleanParam(name: 'BACK_END', defaultValue: true, description: 'Should all the backEnd tests run?'),
+        booleanParam(name: 'FRONT_END', defaultValue: true, description: 'Should all the frontEnd tests run?'),
         booleanParam(name: 'RUN_UI', defaultValue: true, description: 'Should UI test run?'),
         booleanParam(name: 'RUN_TLV', defaultValue: true, description: 'Should tlv test run?')
     ]),
@@ -43,9 +43,47 @@ podTemplate(
             scmVars = checkout(scm)
             Date date = new Date()
             String currentDate = date.format("MM/dd-HH:mm")
-            buildName "${TESTS_TO_RUN}-${currentDate}"
-            TAG_NAME = "${TESTS_TO_RUN}-${currentDate}"
+            if (params.BACK_END && params.FRONT_END)
+            {
+                buildName "${TESTS_TO_RUN}-${currentDate}"
+                TAG_NAME = "${TESTS_TO_RUN}-${currentDate}"
+            }
+            else if (!params.FRONT_END && params.BACK_END)
+            {
+                if (TESTS_TO_RUN == 'ALL')
+                {
+                    buildName "All_BackEnd" + "-${currentDate}"
+                    TAG_NAME = "All_BackEnd" + "-${currentDate}"
+                }
+                else
+                {
+                    buildName "${TESTS_TO_RUN}-${currentDate}"
+                    TAG_NAME = "${TESTS_TO_RUN}-${currentDate}"
+                }
+            }
+            else if (params.FRONT_END && !params.BACK_END)
+            {
+                if (TESTS_TO_RUN == 'ALL')
+                {
+                    buildName "All_FrontEnd" + "-${currentDate}"
+                    TAG_NAME = "All_FrontEnd" + "-${currentDate}"
+                }
+                else if (!params.RUN_UI && params.RUN_TLV)
+                {
+                    buildName "TLV" + "-${currentDate}"
+                    TAG_NAME = "TLV" + "-${currentDate}"
+                }
+                else if (params.RUN_UI && !params.RUN_TLV)
+                {
+                    buildName "UI" + "-${currentDate}"
+                    TAG_NAME = "UI" + "-${currentDate}"
+                }
+            }
         }
+
+
+
+
         if (params.BACK_END)
         {
             stage("Begin BackEnd Tests")
