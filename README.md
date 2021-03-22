@@ -45,3 +45,8 @@ Currently, test environment is set up to run tests for repositories that have
 the naming convention "omar-{service}". testList.txt only contains the {service}
 portion of this convention, and therefore when adding to the list, only need 
 that portion of the service name. 
+
+### not_being_tested.txt
+File that contains any tests that SHOULD be in the testList.txt file, but are 
+not for one reason or another: i.e. test environment not properly set up in the 
+parent repository.

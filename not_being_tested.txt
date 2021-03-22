@@ -1,0 +1,6 @@
+omar-basemap
+omar-config-server
+omar-mensa
+omar-oms
+omar-wms
+omar-wmts
